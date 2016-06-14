@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>滚动条</title>
+    <style>
+    * {
+        padding: 0;
+        margin: 0;
+    }
+    
+    #box {
+        width: 500px;
+        height: 600px;
+        border: 1px solid red;
+        position: relative;
+        top: 20px;
+        left: 20px;
+        overflow: hidden;
+    }
+    
+    .right {
+        width: 30px;
+        height: 100%;
+        background: skyblue;
+        position: absolute;
+        top: 0;
+        right: 0;
+    }
+    
+    .drag {
+        width: 100%;
+        height: 50px;
+        position: absolute;
+        top: 0;
+        left: 0;
+        background: red;
+    }
+    
+    .cont {
+        margin-right: 31px;
+    }
+    </style>
+    <script>
+    window.onload = function() {
+        var oDr = document.getElementById('drag');
+        var oRig = document.getElementById('right');
+        var oBox = document.getElementById('box');
+        var oCont = document.getElementById('cont');
+        var oContH = oCont.offsetHeight;
+        var oBoxH = oBox.offsetHeight;
+        var t = 0;
+        oDr.onmousedown = function(ev) {
+            var oEvent = ev || event;
+            //oEvent.cancelBubble=true;
+            var fixY = oEvent.clientY - oDr.offsetTop;
+            //var oBoxH=oBox.offsetHeight;
+            //var oContH=oCont.offsetHeight;
+            //var t=0;
+            document.onmousemove = function(ev) {
+                var oEvent = ev || event;
+                //oEvent.cancelBubble=true;
+                var t = oEvent.clientY - fixY
+                scrollFn(t)
+
+                /*if(t<0)t=0;
+                if(t>(oBox.offsetHeight-oDr.offsetHeight)){
+                	t=oBox.offsetHeight-oDr.offsetHeight;
+                };
+                var scale=t/(oBox.offsetHeight-oDr.offsetHeight)*(oContH-oBoxH)
+                oDr.style.marginTop=t+'px';
+                oCont.style.marginTop=-scale+'px';*/
+            };
+            document.onmouseup = function() {
+                document.onmousemove = null;
+                document.onmouseup = null;
+                oDr.releaseCapture && oDr.releaseCapture();
+            };
+            oDr.setCapture && oDr.setCapture();
+            return false;
+        };
+
+        function scrollFn(t) {
+            if (t < 0) t = 0;
+            if (t > (oBox.offsetHeight - oDr.offsetHeight)) {
+                t = oBox.offsetHeight - oDr.offsetHeight;
+            };
+            var scale = t / (oBox.offsetHeight - oDr.offsetHeight) * (oContH - oBoxH)
+            oDr.style.marginTop = t + 'px';
+            oCont.style.marginTop = -scale + 'px';
+        };
+        //调用滚轮函数
+        addWheel(oBox, function(bDown) {
+            if (bDown) {
+                t += 10;
+            } else {
+                t -= 10;
+            };
+
+            if (t < 0) {
+                t = 0
+            };
+            if (t > (oBox.offsetHeight - oDr.offsetHeight)) {
+                t = oBox.offsetHeight - oDr.offsetHeight;
+            };
+            scrollFn(t);
+        });
+        //封装滚轮函数
+        function addWheel(obj, fn) {
+            if (window.navigator.userAgent.toLowerCase().indexOf('firefox') != -1) {
+                obj.addEventListener('DOMMouseScroll', wheel, false)
+            } else {
+                obj.onmousewheel = wheel;
+            };
+
+            function wheel(ev) {
+                var oE = ev || event;
+                var bDown = true; //往下//var bDown=oE.detail?oE.detail>0:oE.wheelDelta<0;
+                if (oE.detail) { //火狐
+                    if (oE.detail > 0) {
+                        bDown = true;
+                    } else {
+                        bDown = false;
+                    };
+                } else { //Chrome
+                    if (oE.wheelDelta > 0) {
+                        bDown = false;
+                    } else {
+                        bDown = true;
+                    };
+                };
+                fn && fn(bDown)
+                oE.preventDefault && oE.preventDefault(); //Firefox;
+                return false; //阻止默认行为 IE Chrome;
+            };
+
+        };
+        //点击滚轮
+        oRig.onclick = function(ev) {
+            var oE = ev || event;
+            var fixY = oE.clientY;
+            var fixB = oBox.offsetTop;
+            var t = fixY - fixB
+            if (t > (oRig.offsetHeight - oDr.offsetHeight)) {
+                t = oRig.offsetHeight - oDr.offsetHeight;
+            };
+            if (t > oDr.offsetTop && t < (oDr.offsetTop + oDr.offsetHeight)) {
+                return false;
+            };
+            var scale = t / (oBox.offsetHeight - oDr.offsetHeight) * (oContH - oBoxH);
+            oDr.style.marginTop = t + 'px';
+            oCont.style.marginTop = -scale + 'px';
+        };
+
+
+    };
+    </script>
+</head>
+
+<body style="height:3000px;">
+    <div id="box">
+        <div class="right" id="right">
+            <div id="drag" class="drag"></div>
+        </div>
+        <div class="cont" id="cont">
+            <p>
+                事件对象： obj.onclick=function(ev){ var oEvent=ev||event; oEvent.clientX 鼠标X坐标 oEvent.clientY 鼠标Y坐标 }; 放大镜缩放比例：span.offsetLeft/(smallBox.offsetWidth-span.offsetWidth)=?/(oImg.offsetWidth-bigBox.offsetWidth); 事件冒泡：js特点 从最小的元素 往上冒 直到冒到document 阻止冒泡： obj.onclick=function(ev){ var oEvent=ev||event; oEvent.cancelBubble=true; } 阻止默认行为： !!!重要 return false; 只输入数字： oEvent.keyCode>=48 && oEvent.keyCode
+                <=57 || oEvent.keyCode==8 ---------------------------------------------------------------------- 鼠标右键时： oncontextmenu 上下文菜单 window.location.reload() 刷新 --------------------------------------------------- 拖拽： onmousedown 保存鼠标位置距离元素最左的距离 disX 最后 清除默认行为 return false； IE独有： setCapture() 捕获 oBox.releaseCapture() 释放捕获 onmousemove 计算 当前鼠标位置 - disX=l 修改元素的left=l onmouseup 清空事件 IE独有： IE 捕获： oBox.setCapture(); 释放捕获： oBox.releaseCapture(); -------------------------------------------------------------------- 深度克隆 var newBox=oBox.cloneNode(true); 浅克隆： var newBox=oBox.cloneNode(); 拖拽例子：（！！！重要！！！） 限制范围 磁性吸附 边框拖拽 复制拖拽（cloneNode） -------------------------------------------------------------- 事件绑定： addEventListener( 'click',show,false) 谷歌/火狐 attachEvent( 'onclick',show); IE8- addEvent() 封装事件绑定 事件解绑定： 不能解绑匿名函数 oBtn.removeEventListener( 'click',show,false); oBtn.detachEvent( 'on'+ev,fn); function removeEvent(obj,ev,fn){ obj.removeEventListener?obj.removeEventListener(ev,fn,false):obj.detachEvent( 'on'+ev,fn); this ： 当前事件对象 重要！！！！ 1. 定时器 2. 函数多套一层 3. 事件绑定 IE下 的this window // -------------------------------------------------------- 练习： 碰撞检测： 克隆拖拽： 九宫格拖拽： 只能输入字母的输入框 放大镜： overfloat scroll 事件对象： obj.onclick=function(ev){ var oEvent=ev||event; oEvent.clientX 鼠标X坐标 oEvent.clientY 鼠标Y坐标 }; 放大镜缩放比例：span.offsetLeft/(smallBox.offsetWidth-span.offsetWidth)=?/(oImg.offsetWidth-bigBox.offsetWidth); 事件冒泡：js特点 从最小的元素 往上冒 直到冒到document 阻止冒泡： obj.onclick=function(ev){ var oEvent=ev||event; oEvent.cancelBubble=true; } 阻止默认行为： !!!重要 return false; 只输入数字： oEvent.keyCode>=48 && oEvent.keyCode
+                    <=57 || oEvent.keyCode==8 ---------------------------------------------------------------------- 鼠标右键时： oncontextmenu 上下文菜单 window.location.reload() 刷新 --------------------------------------------------- 拖拽： onmousedown 保存鼠标位置距离元素最左的距离 disX 最后 清除默认行为 return false； IE独有： setCapture() 捕获 oBox.releaseCapture() 释放捕获 onmousemove 计算 当前鼠标位置 - disX=l 修改元素的left=l onmouseup 清空事件 IE独有： IE 捕获： oBox.setCapture(); 释放捕获： oBox.releaseCapture(); -------------------------------------------------------------------- 深度克隆 var newBox=oBox.cloneNode(true); 浅克隆： var newBox=oBox.cloneNode(); 拖拽例子：（！！！重要！！！） 限制范围 磁性吸附 边框拖拽 复制拖拽（cloneNode） -------------------------------------------------------------- 事件绑定： addEventListener( 'click',show,false) 谷歌/火狐 attachEvent( 'onclick',show); IE8- addEvent() 封装事件绑定 事件解绑定： 不能解绑匿名函数 oBtn.removeEventListener( 'click',show,false); oBtn.detachEvent( 'on'+ev,fn); function removeEvent(obj,ev,fn){ obj.removeEventListener?obj.removeEventListener(ev,fn,false):obj.detachEvent( 'on'+ev,fn); this ： 当前事件对象 重要！！！！ 1. 定时器 2. 函数多套一层 3. 事件绑定 IE下 的this window // -------------------------------------------------------- 练习： 碰撞检测： 克隆拖拽： 九宫格拖拽： 只能输入字母的输入框 放大镜： overfloat scroll </p>
+        </div>
+    </div>
+</body>
+
+</html>
